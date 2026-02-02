@@ -35,6 +35,20 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
 
+  # Supabase integration
+  supabase_flutter: ^2.9.1
+
+  # Image caching and loading
+  cached_network_image: ^3.4.1
+
+  # Local storage and file management
+  path_provider: ^2.1.5
+  shared_preferences: ^2.3.4
+
+  # UX feedback
+  vibration: ^2.0.0
+  audioplayers: ^6.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
