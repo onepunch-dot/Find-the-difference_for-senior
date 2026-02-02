@@ -49,6 +49,10 @@ dependencies:
   vibration: ^2.0.0
   audioplayers: ^6.1.0
 
+  # Network and device info
+  http: ^1.2.0
+  device_info_plus: ^11.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'constants/supabase_config.dart';
+import 'screens/theme_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -76,9 +77,11 @@ class HomePage extends StatelessWidget {
                   height: 70,
                   child: ElevatedButton(
                     onPressed: () {
-                      // TODO: Navigate to theme selection
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('테마 선택 화면으로 이동')),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ThemePage(),
+                        ),
                       );
                     },
                     style: ElevatedButton.styleFrom(
