@@ -3,8 +3,12 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'stage_viewmodel.dart';
 import 'widgets/image_viewer.dart';
+import 'widgets/hint_dialog.dart';
+import 'hint_service.dart';
 import '../../domain/models/stage.dart';
+import '../../domain/models/answer.dart';
 import '../ads/widgets/banner_ad_widget.dart';
+import '../ads/rewarded_ad_service.dart';
 
 class StagePage extends StatelessWidget {
   final Stage stage;
@@ -43,11 +47,15 @@ class _StagePageContent extends StatefulWidget {
 
 class _StagePageContentState extends State<_StagePageContent> {
   late final TransformationController _transformationController;
+  late final HintService _hintService;
+  Answer? _currentHint; // 현재 표시 중인 힌트
 
   @override
   void initState() {
     super.initState();
     _transformationController = TransformationController();
+    _hintService = HintService();
+    _hintService.initialize();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final viewModel = context.read<StageViewModel>();
@@ -62,6 +70,7 @@ class _StagePageContentState extends State<_StagePageContent> {
   @override
   void dispose() {
     _transformationController.dispose();
+    _hintService.dispose();
     super.dispose();
   }
 
@@ -89,6 +98,68 @@ class _StagePageContentState extends State<_StagePageContent> {
       matrix.setEntry(1, 1, 2.0); // scale y
       matrix.setEntry(2, 2, 2.0); // scale z
       _transformationController.value = matrix;
+    }
+  }
+
+  void _showHintDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => HintDialog(
+        freeHintsRemaining: _hintService.freeHintsRemaining,
+        onUseFreeHint: _useFreeHint,
+        onWatchAd: _watchAdForHint,
+      ),
+    );
+  }
+
+  Future<void> _useFreeHint() async {
+    final success = await _hintService.useFreeHint();
+    if (success) {
+      _showHint();
+    }
+  }
+
+  Future<void> _watchAdForHint() async {
+    final rewardedAdService = RewardedAdService();
+
+    // 광고 로드
+    await rewardedAdService.loadAd();
+
+    // 광고 시청
+    final earned = await rewardedAdService.showAd();
+
+    if (earned && mounted) {
+      // 힌트 추가
+      await _hintService.addHintFromAd();
+      _showHint();
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('광고를 끝까지 시청해주세요')),
+      );
+    }
+  }
+
+  void _showHint() {
+    final viewModel = context.read<StageViewModel>();
+    final hint = viewModel.useHint();
+
+    if (hint != null) {
+      setState(() {
+        _currentHint = hint;
+      });
+
+      // 3초 후 힌트 제거
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) {
+          setState(() {
+            _currentHint = null;
+          });
+        }
+      });
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('모든 정답을 찾았습니다!')),
+      );
     }
   }
 
@@ -284,11 +355,7 @@ class _StagePageContentState extends State<_StagePageContent> {
                 child: IconButton(
                   padding: EdgeInsets.zero,
                   icon: const Icon(Icons.lightbulb, size: 20, color: Colors.white),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('힌트 기능 구현 예정')),
-                    );
-                  },
+                  onPressed: _showHintDialog,
                 ),
               ),
             ],
@@ -328,6 +395,7 @@ class _StagePageContentState extends State<_StagePageContent> {
               foundAnswers: viewModel.foundAnswers,
               onTap: (tapX, tapY) => viewModel.checkAnswer(tapX, tapY),
               transformationController: _transformationController,
+              hintAnswer: _currentHint,
             ),
             // Label
             Positioned(

@@ -8,6 +8,7 @@ class ImageViewer extends StatefulWidget {
   final Set<int> foundAnswers;
   final Function(double tapX, double tapY) onTap;
   final TransformationController transformationController;
+  final Answer? hintAnswer; // 힌트로 표시할 정답
 
   const ImageViewer({
     super.key,
@@ -16,14 +17,40 @@ class ImageViewer extends StatefulWidget {
     required this.foundAnswers,
     required this.onTap,
     required this.transformationController,
+    this.hintAnswer,
   });
 
   @override
   State<ImageViewer> createState() => _ImageViewerState();
 }
 
-class _ImageViewerState extends State<ImageViewer> {
+class _ImageViewerState extends State<ImageViewer>
+    with SingleTickerProviderStateMixin {
   Offset? _wrongTapPosition;
+  late AnimationController _hintAnimationController;
+  late Animation<double> _hintAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _hintAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _hintAnimation = Tween<double>(begin: 0.3, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _hintAnimationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _hintAnimationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,6 +91,10 @@ class _ImageViewerState extends State<ImageViewer> {
                 final answer = widget.answers[index];
                 return _buildAnswerMarker(answer);
               }),
+
+              // 힌트 마커 (점멸)
+              if (widget.hintAnswer != null)
+                _buildHintMarker(widget.hintAnswer!),
 
               // 오답 피드백 (빨간 점)
               if (_wrongTapPosition != null)
@@ -161,6 +192,47 @@ class _ImageViewerState extends State<ImageViewer> {
                 ),
               ],
             ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHintMarker(Answer answer) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = Size(constraints.maxWidth, constraints.maxHeight);
+
+        // 비율 좌표를 실제 픽셀로 변환
+        final centerX = answer.x * size.width;
+        final centerY = answer.y * size.height;
+        final radiusPixels = answer.radius * size.width;
+
+        return Positioned(
+          left: centerX - radiusPixels,
+          top: centerY - radiusPixels,
+          child: AnimatedBuilder(
+            animation: _hintAnimation,
+            builder: (context, child) {
+              return Container(
+                width: radiusPixels * 2,
+                height: radiusPixels * 2,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.amber.withValues(alpha: _hintAnimation.value),
+                    width: 3,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.amber.withValues(alpha: _hintAnimation.value * 0.6),
+                      blurRadius: 15,
+                      spreadRadius: 3,
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         );
       },
