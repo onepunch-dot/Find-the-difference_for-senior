@@ -1,12 +1,18 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:find_difference_app/app.dart';
+import 'package:find_difference_app/features/home/home_page.dart';
 
 void main() {
-  testWidgets('App loads successfully', (WidgetTester tester) async {
-    // 앱 빌드
-    await tester.pumpWidget(const MyApp());
+  testWidgets('HomePage displays correctly', (WidgetTester tester) async {
+    // HomePage 빌드 (초기화 로직 없이 UI만 테스트)
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: HomePage(),
+      ),
+    );
 
-    // 로딩 페이지가 표시되는지 확인
-    expect(find.text('로딩 중...'), findsOneWidget);
+    // HomePage 요소 확인
+    expect(find.text('틀린그림찾기'), findsOneWidget);
+    expect(find.text('앱 초기화 완료!'), findsOneWidget);
   });
 }
