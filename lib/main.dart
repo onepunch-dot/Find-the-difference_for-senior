@@ -9,19 +9,35 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // 세로 모드 고정 (설정에서 회전 허용 가능)
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
+  try {
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+  } catch (e) {
+    debugPrint('Failed to set orientation: $e');
+  }
 
   // Supabase 초기화
-  await SupabaseClientManager.initialize();
+  try {
+    await SupabaseClientManager.initialize();
+  } catch (e) {
+    debugPrint('Failed to initialize Supabase: $e');
+  }
 
   // Google Mobile Ads 초기화
-  await AdService.initialize();
+  try {
+    await AdService.initialize();
+  } catch (e) {
+    debugPrint('Failed to initialize AdService: $e');
+  }
 
   // In-App Purchase 초기화
-  await IAPService.initialize();
+  try {
+    await IAPService.initialize();
+  } catch (e) {
+    debugPrint('Failed to initialize IAPService: $e');
+  }
 
   runApp(const MyApp());
 }

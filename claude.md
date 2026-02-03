@@ -39,6 +39,9 @@
 - 버그 수정은 “재현 테스트 추가 → 수정 → 회귀 방지” 순서를 고정한다.
 - 테스트는 결정적/재현 가능해야 하며(시간/네트워크 의존 최소화), 외부 의존성(Supabase/AdMob/IAP)은 가능한 범위에서 mock/fake로 분리한다.
 
+### 2-6. UI
+- page_*.md에 저장된 UI를 사용한다.
+
 ---
 
 ## 3) 폴더 구조 (권장, 고정)
@@ -222,3 +225,8 @@ lib/
 - 요구사항에 없는 과도한 UX(하트/타이머 강제, 페널티 강화 등) 금지
 - 상태/에러 UI 없이 “그냥 스낵바”로 끝내기 금지
 - 서버 데이터 계약을 임의로 바꾸기 금지(필요 시 마이그레이션 문서 먼저)
+
+
+## 12) supabase
+- supabase publishable Key: sb_publishable_G2VmHnnuVQ_Y7heLLL_qBQ_hLUxcw3k
+- supabase project url(anon key를 사용하지 않음): https://orjuplurmdbpkdsmameb.supabase.co

@@ -12,30 +12,39 @@ class InitializeAppUseCase {
   });
 
   /// 앱 초기화 실행
-  /// 1. 익명 로그인 (필요 시)
-  /// 2. 테마 데이터 로드 확인
+  /// 1. Supabase 연결 확인
+  /// 2. 테마 데이터 로드 확인 (온라인 시)
   Future<InitializeResult> execute() async {
     try {
-      // 1. 익명 로그인 확인 (skipAuth가 false일 때만)
-      if (!skipAuth) {
-        if (!SupabaseClientManager.isAuthenticated) {
-          final response = await SupabaseClientManager.instance.auth.signInAnonymously();
-          if (response.user == null) {
-            return InitializeResult.failure('익명 로그인에 실패했습니다.');
-          }
-        }
+      // 1. Supabase 초기화 확인
+      if (!SupabaseClientManager.isInitialized) {
+        // Supabase 초기화 실패 (오프라인 또는 네트워크 에러)
+        // 오프라인 모드로 계속 진행
+        return InitializeResult.success();
       }
 
-      // 2. 테마 데이터 로드 확인 (최소 1개 이상)
-      final themes = await _themeRepository.getAllThemes();
-      if (themes.isEmpty) {
-        return InitializeResult.failure('콘텐츠를 불러올 수 없습니다.');
+      // 2. 인증 확인 (skipAuth가 false일 때만)
+      if (!skipAuth && !SupabaseClientManager.isAuthenticated) {
+        // 익명 로그인이 되어있지 않으면 에러
+        return InitializeResult.failure('인증에 실패했습니다.');
+      }
+
+      // 3. 테마 데이터 로드 확인 (최소 1개 이상)
+      try {
+        final themes = await _themeRepository.getAllThemes();
+        if (themes.isEmpty) {
+          // 테마가 없으면 오프라인 모드로 진행
+          return InitializeResult.success();
+        }
+      } catch (e) {
+        // 테마 로드 실패해도 오프라인 모드로 진행
+        return InitializeResult.success();
       }
 
       return InitializeResult.success();
     } catch (e) {
-      // 네트워크 에러 또는 기타 에러
-      return InitializeResult.failure('초기화 중 오류가 발생했습니다: $e');
+      // 기타 에러가 발생해도 앱은 계속 실행
+      return InitializeResult.success();
     }
   }
 }

@@ -10,10 +10,21 @@ class AdService {
   static Future<void> initialize() async {
     if (_initialized) return;
 
-    await MobileAds.instance.initialize();
-    _initialized = true;
+    // 웹에서는 AdMob 지원 안함
+    if (kIsWeb) {
+      debugPrint('AdMob not supported on web');
+      _initialized = true;
+      return;
+    }
 
-    debugPrint('AdMob initialized');
+    try {
+      await MobileAds.instance.initialize();
+      _initialized = true;
+      debugPrint('AdMob initialized');
+    } catch (e) {
+      debugPrint('AdMob initialization failed: $e');
+      _initialized = true; // 에러가 나도 initialized로 처리
+    }
   }
 
   /// 광고 제거 구매 여부 설정

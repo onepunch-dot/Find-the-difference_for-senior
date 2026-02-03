@@ -14,17 +14,30 @@ class IAPService {
   static Future<void> initialize() async {
     if (_initialized) return;
 
-    final available = await _instance.isAvailable();
-    if (!available) {
-      debugPrint('IAP not available');
+    // 웹에서는 IAP 지원 안함
+    if (kIsWeb) {
+      debugPrint('IAP not supported on web');
+      _initialized = true;
       return;
     }
 
-    _initialized = true;
-    debugPrint('IAP initialized');
+    try {
+      final available = await _instance.isAvailable();
+      if (!available) {
+        debugPrint('IAP not available');
+        _initialized = true;
+        return;
+      }
 
-    // TODO: 구매 스트림 리스닝
-    // _instance.purchaseStream.listen(_handlePurchaseUpdate);
+      _initialized = true;
+      debugPrint('IAP initialized');
+
+      // TODO: 구매 스트림 리스닝
+      // _instance.purchaseStream.listen(_handlePurchaseUpdate);
+    } catch (e) {
+      debugPrint('IAP initialization failed: $e');
+      _initialized = true; // 에러가 나도 initialized로 처리
+    }
   }
 
   /// 광고 제거 구매
