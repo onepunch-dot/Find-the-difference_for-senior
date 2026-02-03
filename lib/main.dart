@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'app.dart';
+import 'data/supabase/supabase_client.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -11,10 +12,11 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
+  // Supabase 초기화
+  await SupabaseClientManager.initialize();
+
   // 추후 추가될 초기화:
-  // - Supabase 초기화
   // - Google Mobile Ads 초기화
-  // - 로컬 스토리지 초기화
 
   runApp(const MyApp());
 }

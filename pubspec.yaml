@@ -39,6 +39,7 @@ dependencies:
 
   # Backend
   supabase_flutter: ^2.9.8
+  http: ^1.2.0
 
   # Storage/Cache
   path_provider: ^2.1.5
