@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../ad_service.dart';
@@ -21,6 +22,9 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   }
 
   void _loadAd() {
+    // 웹에서는 광고 지원 안함
+    if (kIsWeb) return;
+
     // 광고 제거 구매 시 로드하지 않음
     if (!AdService.shouldShowAds) return;
 

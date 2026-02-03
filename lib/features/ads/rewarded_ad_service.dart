@@ -9,6 +9,12 @@ class RewardedAdService {
 
   /// 리워드 광고 로드
   Future<void> loadAd() async {
+    // 웹에서는 광고 지원 안함
+    if (kIsWeb) {
+      debugPrint('RewardedAd not supported on web');
+      return;
+    }
+
     if (_isLoading || _rewardedAd != null) return;
 
     _isLoading = true;
@@ -32,6 +38,12 @@ class RewardedAdService {
 
   /// 리워드 광고 표시
   Future<bool> showAd() async {
+    // 웹에서는 광고 지원 안함
+    if (kIsWeb) {
+      debugPrint('RewardedAd not supported on web');
+      return false;
+    }
+
     if (_rewardedAd == null) {
       debugPrint('RewardedAd not loaded yet');
       return false;
