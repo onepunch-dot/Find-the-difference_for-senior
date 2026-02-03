@@ -5,6 +5,7 @@ import 'home_viewmodel.dart';
 import 'widgets/theme_card.dart';
 import '../../domain/usecases/get_themes_usecase.dart';
 import '../../data/supabase/repositories/theme_repository_impl.dart';
+import '../ads/widgets/banner_ad_widget.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -47,7 +48,12 @@ class _HomePageContent extends StatelessWidget {
           ),
         ],
       ),
-      body: _buildBody(context, viewModel),
+      body: Column(
+        children: [
+          Expanded(child: _buildBody(context, viewModel)),
+          const BannerAdWidget(), // 배너 광고
+        ],
+      ),
     );
   }
 

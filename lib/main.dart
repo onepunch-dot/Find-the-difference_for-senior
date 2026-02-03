@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'app.dart';
 import 'data/supabase/supabase_client.dart';
+import 'features/ads/ad_service.dart';
+import 'features/purchase/iap_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,8 +17,11 @@ void main() async {
   // Supabase 초기화
   await SupabaseClientManager.initialize();
 
-  // 추후 추가될 초기화:
-  // - Google Mobile Ads 초기화
+  // Google Mobile Ads 초기화
+  await AdService.initialize();
+
+  // In-App Purchase 초기화
+  await IAPService.initialize();
 
   runApp(const MyApp());
 }
