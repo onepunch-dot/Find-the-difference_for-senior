@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'stage_viewmodel.dart';
 import 'widgets/image_viewer.dart';
 import 'widgets/hint_dialog.dart';
+import 'tutorial_overlay.dart';
 import 'hint_service.dart';
 import '../../domain/models/stage.dart';
 import '../../domain/models/answer.dart';
@@ -51,6 +53,7 @@ class _StagePageContentState extends State<_StagePageContent> {
   late final TransformationController _transformationController;
   late final HintService _hintService;
   Answer? _currentHint; // 현재 표시 중인 힌트
+  bool _showTutorial = false;
 
   @override
   void initState() {
@@ -66,6 +69,9 @@ class _StagePageContentState extends State<_StagePageContent> {
           _navigateToResult();
         }
       });
+
+      // 튜토리얼 확인
+      _checkTutorial();
     });
   }
 
@@ -74,6 +80,26 @@ class _StagePageContentState extends State<_StagePageContent> {
     _transformationController.dispose();
     _hintService.dispose();
     super.dispose();
+  }
+
+  Future<void> _checkTutorial() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasSeenTutorial = prefs.getBool('has_seen_tutorial') ?? false;
+
+    if (!hasSeenTutorial && mounted) {
+      setState(() {
+        _showTutorial = true;
+      });
+    }
+  }
+
+  Future<void> _completeTutorial() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('has_seen_tutorial', true);
+
+    setState(() {
+      _showTutorial = false;
+    });
   }
 
   void _navigateToResult() async {
@@ -187,11 +213,13 @@ class _StagePageContentState extends State<_StagePageContent> {
       },
       child: Scaffold(
         backgroundColor: const Color(0xFFFFF9F2),
-        body: Column(
+        body: Stack(
           children: [
-            _buildHeader(context, viewModel),
-            Expanded(
-              child: Padding(
+            Column(
+              children: [
+                _buildHeader(context, viewModel),
+                Expanded(
+                  child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Column(
                   children: [
@@ -220,7 +248,14 @@ class _StagePageContentState extends State<_StagePageContent> {
                 ),
               ),
             ),
-            const BannerAdWidget(),
+                const BannerAdWidget(),
+              ],
+            ),
+            // Tutorial overlay
+            if (_showTutorial)
+              TutorialOverlay(
+                onComplete: _completeTutorial,
+              ),
           ],
         ),
       ),
