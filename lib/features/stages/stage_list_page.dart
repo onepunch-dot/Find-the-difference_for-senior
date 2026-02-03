@@ -6,6 +6,9 @@ import 'widgets/stage_card.dart';
 import '../../domain/usecases/get_stages_usecase.dart';
 import '../../data/supabase/repositories/stage_repository_impl.dart';
 import '../../domain/models/stage.dart';
+import '../../presentation/widgets/loading_widget.dart';
+import '../../presentation/widgets/error_widget.dart';
+import '../../presentation/widgets/empty_widget.dart';
 
 class StageListPage extends StatelessWidget {
   final String themeId;
@@ -53,36 +56,20 @@ class _StageListPageContent extends StatelessWidget {
 
   Widget _buildBody(BuildContext context, StageListViewModel viewModel) {
     if (viewModel.isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const LoadingWidget(message: '스테이지를 불러오는 중...');
     }
 
     if (viewModel.hasError) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(
-              viewModel.errorMessage!,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.red),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => viewModel.loadStages(),
-              child: const Text('다시 시도'),
-            ),
-          ],
-        ),
+      return AppErrorWidget(
+        message: viewModel.errorMessage!,
+        onRetry: () => viewModel.loadStages(),
       );
     }
 
     if (viewModel.stages.isEmpty) {
-      return const Center(
-        child: Text('사용 가능한 스테이지가 없습니다.'),
+      return const EmptyWidget(
+        message: '사용 가능한 스테이지가 없습니다.',
+        icon: Icons.layers_outlined,
       );
     }
 

@@ -6,6 +6,9 @@ import 'widgets/theme_card.dart';
 import '../../domain/usecases/get_themes_usecase.dart';
 import '../../data/supabase/repositories/theme_repository_impl.dart';
 import '../ads/widgets/banner_ad_widget.dart';
+import '../../presentation/widgets/loading_widget.dart';
+import '../../presentation/widgets/error_widget.dart';
+import '../../presentation/widgets/empty_widget.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -59,36 +62,20 @@ class _HomePageContent extends StatelessWidget {
 
   Widget _buildBody(BuildContext context, HomeViewModel viewModel) {
     if (viewModel.isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const LoadingWidget(message: '테마를 불러오는 중...');
     }
 
     if (viewModel.hasError) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(
-              viewModel.errorMessage!,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.red),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => viewModel.loadThemes(),
-              child: const Text('다시 시도'),
-            ),
-          ],
-        ),
+      return AppErrorWidget(
+        message: viewModel.errorMessage!,
+        onRetry: () => viewModel.loadThemes(),
       );
     }
 
     if (viewModel.themes.isEmpty) {
-      return const Center(
-        child: Text('사용 가능한 테마가 없습니다.'),
+      return const EmptyWidget(
+        message: '사용 가능한 테마가 없습니다.',
+        icon: Icons.category_outlined,
       );
     }
 
