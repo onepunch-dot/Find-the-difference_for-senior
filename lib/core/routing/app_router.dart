@@ -5,6 +5,7 @@ import '../../features/home/home_page.dart';
 import '../../features/stages/stage_list_page.dart';
 import '../../features/stage_play/stage_page.dart';
 import '../../features/result/result_page.dart';
+import '../../features/settings/settings_page.dart';
 import '../../domain/models/stage.dart';
 
 final GoRouter appRouter = GoRouter(
@@ -60,6 +61,11 @@ final GoRouter appRouter = GoRouter(
           nextStage: nextStage,
         );
       },
+    ),
+    GoRoute(
+      path: '/settings',
+      name: 'settings',
+      builder: (context, state) => const SettingsPage(),
     ),
   ],
   errorBuilder: (context, state) => Scaffold(

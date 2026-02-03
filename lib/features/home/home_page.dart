@@ -109,9 +109,7 @@ class _HomePageContent extends StatelessWidget {
               }),
               const SizedBox(width: 12),
               _buildIconButton(Icons.settings, () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('설정 페이지 구현 예정')),
-                );
+                context.push('/settings');
               }),
             ],
           ),
