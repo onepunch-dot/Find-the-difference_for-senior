@@ -9,6 +9,8 @@ import '../../domain/models/stage.dart';
 import '../../domain/models/answer.dart';
 import '../ads/widgets/banner_ad_widget.dart';
 import '../ads/rewarded_ad_service.dart';
+import '../../data/supabase/repositories/stage_repository_impl.dart';
+import '../../data/supabase/supabase_client.dart';
 
 class StagePage extends StatelessWidget {
   final Stage stage;
@@ -74,7 +76,14 @@ class _StagePageContentState extends State<_StagePageContent> {
     super.dispose();
   }
 
-  void _navigateToResult() {
+  void _navigateToResult() async {
+    // 완료 기록 저장
+    final userId = SupabaseClientManager.currentUserId;
+    if (userId != null) {
+      final repository = StageRepositoryImpl();
+      await repository.markStageAsCompleted(userId, widget.currentStage.id);
+    }
+
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
         context.push('/result', extra: {

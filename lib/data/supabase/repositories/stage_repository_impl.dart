@@ -44,30 +44,29 @@ class StageRepositoryImpl implements StageRepository {
   Future<List<String>> getCompletedStageIds(String userId) async {
     try {
       final response = await _client
-          .from('user_progress')
+          .from('completions')
           .select('stage_id')
-          .eq('user_id', userId)
-          .eq('completed', true);
+          .eq('user_id', userId);
 
       return (response as List)
           .map((json) => json['stage_id'] as String)
           .toList();
     } catch (e) {
-      throw Exception('Failed to fetch completed stages: $e');
+      // 에러 발생 시 빈 목록 반환 (오프라인 등)
+      return [];
     }
   }
 
   @override
   Future<void> markStageAsCompleted(String userId, String stageId) async {
     try {
-      await _client.from('user_progress').upsert({
+      await _client.from('completions').insert({
         'user_id': userId,
         'stage_id': stageId,
-        'completed': true,
-        'completed_at': DateTime.now().toIso8601String(),
       });
     } catch (e) {
-      throw Exception('Failed to mark stage as completed: $e');
+      // 이미 완료 기록이 있는 경우 무시 (UNIQUE constraint)
+      // 에러가 발생해도 앱이 깨지지 않도록 처리
     }
   }
 }
