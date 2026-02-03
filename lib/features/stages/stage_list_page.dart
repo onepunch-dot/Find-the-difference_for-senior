@@ -5,6 +5,7 @@ import 'stage_list_viewmodel.dart';
 import 'widgets/stage_card.dart';
 import '../../domain/usecases/get_stages_usecase.dart';
 import '../../data/supabase/repositories/stage_repository_impl.dart';
+import '../../domain/models/stage.dart';
 
 class StageListPage extends StatelessWidget {
   final String themeId;
@@ -101,8 +102,17 @@ class _StageListPageContent extends StatelessWidget {
           onTap: () {
             final result = viewModel.onStageTap(stageWithStatus);
             if (result != null) {
+              // 다음 스테이지 찾기
+              Stage? nextStage;
+              if (index + 1 < viewModel.stages.length) {
+                nextStage = viewModel.stages[index + 1].stage;
+              }
+
               // StagePage로 이동
-              context.push('/stage', extra: result.stage);
+              context.push('/stage', extra: {
+                'stage': result.stage,
+                'nextStage': nextStage,
+              });
             }
           },
         );

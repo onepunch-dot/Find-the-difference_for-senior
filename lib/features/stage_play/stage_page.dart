@@ -1,28 +1,72 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import 'stage_viewmodel.dart';
 import 'widgets/image_viewer.dart';
 import '../../domain/models/stage.dart';
 
 class StagePage extends StatelessWidget {
   final Stage stage;
+  final Stage? nextStage; // 다음 스테이지 (순서대로 진행 시)
 
   const StagePage({
     super.key,
     required this.stage,
+    this.nextStage,
   });
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => StageViewModel(stage: stage),
-      child: const _StagePageContent(),
+      child: _StagePageContent(
+        currentStage: stage,
+        nextStage: nextStage,
+      ),
     );
   }
 }
 
-class _StagePageContent extends StatelessWidget {
-  const _StagePageContent();
+class _StagePageContent extends StatefulWidget {
+  final Stage currentStage;
+  final Stage? nextStage;
+
+  const _StagePageContent({
+    required this.currentStage,
+    this.nextStage,
+  });
+
+  @override
+  State<_StagePageContent> createState() => _StagePageContentState();
+}
+
+class _StagePageContentState extends State<_StagePageContent> {
+  @override
+  void initState() {
+    super.initState();
+    // ViewModel 완료 상태 리스너
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final viewModel = context.read<StageViewModel>();
+      viewModel.addListener(() {
+        if (viewModel.isCompleted && mounted) {
+          // 완료 시 ResultPage로 이동
+          _navigateToResult();
+        }
+      });
+    });
+  }
+
+  void _navigateToResult() {
+    // 약간의 지연 후 ResultPage로 이동 (축하 효과)
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        context.push('/result', extra: {
+          'completedStage': widget.currentStage,
+          'nextStage': widget.nextStage,
+        });
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

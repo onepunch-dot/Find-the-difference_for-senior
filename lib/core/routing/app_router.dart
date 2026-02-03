@@ -4,6 +4,7 @@ import '../../features/loading/loading_page.dart';
 import '../../features/home/home_page.dart';
 import '../../features/stages/stage_list_page.dart';
 import '../../features/stage_play/stage_page.dart';
+import '../../features/result/result_page.dart';
 import '../../domain/models/stage.dart';
 
 final GoRouter appRouter = GoRouter(
@@ -35,12 +36,31 @@ final GoRouter appRouter = GoRouter(
       path: '/stage',
       name: 'stage',
       builder: (context, state) {
-        final stage = state.extra as Stage;
-        return StagePage(stage: stage);
+        // extra가 Stage 또는 Map일 수 있음
+        if (state.extra is Stage) {
+          return StagePage(stage: state.extra as Stage);
+        } else {
+          final data = state.extra as Map<String, dynamic>;
+          return StagePage(
+            stage: data['stage'] as Stage,
+            nextStage: data['nextStage'] as Stage?,
+          );
+        }
       },
     ),
-    // 추후 추가될 라우트:
-    // - /result (ResultPage)
+    GoRoute(
+      path: '/result',
+      name: 'result',
+      builder: (context, state) {
+        final data = state.extra as Map<String, dynamic>;
+        final completedStage = data['completedStage'] as Stage;
+        final nextStage = data['nextStage'] as Stage?;
+        return ResultPage(
+          completedStage: completedStage,
+          nextStage: nextStage,
+        );
+      },
+    ),
   ],
   errorBuilder: (context, state) => Scaffold(
     body: Center(
