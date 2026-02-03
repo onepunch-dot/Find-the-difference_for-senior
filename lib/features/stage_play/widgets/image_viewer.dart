@@ -125,9 +125,22 @@ class _ImageViewerState extends State<ImageViewer> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: const Color(0xFF6200EE),
-                width: 4,
+                color: const Color(0xFF7C3AED),
+                width: 2,
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.5),
+                  blurRadius: 10,
+                  spreadRadius: 2,
+                ),
+                BoxShadow(
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.5),
+                  blurRadius: 10,
+                  spreadRadius: 2,
+                  blurStyle: BlurStyle.inner,
+                ),
+              ],
             ),
           ),
         );

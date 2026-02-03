@@ -4,10 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'stage_viewmodel.dart';
 import 'widgets/image_viewer.dart';
 import '../../domain/models/stage.dart';
+import '../ads/widgets/banner_ad_widget.dart';
 
 class StagePage extends StatelessWidget {
   final Stage stage;
-  final Stage? nextStage; // 다음 스테이지 (순서대로 진행 시)
+  final Stage? nextStage;
 
   const StagePage({
     super.key,
@@ -44,12 +45,10 @@ class _StagePageContentState extends State<_StagePageContent> {
   @override
   void initState() {
     super.initState();
-    // ViewModel 완료 상태 리스너
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final viewModel = context.read<StageViewModel>();
       viewModel.addListener(() {
         if (viewModel.isCompleted && mounted) {
-          // 완료 시 ResultPage로 이동
           _navigateToResult();
         }
       });
@@ -57,7 +56,6 @@ class _StagePageContentState extends State<_StagePageContent> {
   }
 
   void _navigateToResult() {
-    // 약간의 지연 후 ResultPage로 이동 (축하 효과)
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
         context.push('/result', extra: {
@@ -82,43 +80,193 @@ class _StagePageContentState extends State<_StagePageContent> {
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.black,
-        body: SafeArea(
-          child: Column(
-            children: [
-              // 상단 UI (진행 상태 + 힌트 버튼)
-              _buildTopBar(context, viewModel),
-
-              // A/B 이미지 뷰어
-              Expanded(
+        backgroundColor: const Color(0xFFFFF9F2),
+        body: Column(
+          children: [
+            _buildHeader(context, viewModel),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
                 child: Column(
                   children: [
-                    // 이미지 A
+                    // Original image
                     Expanded(
-                      child: ImageViewer(
-                        imageUrl: viewModel.stage.imageAUrl,
-                        answers: viewModel.stage.answers,
-                        foundAnswers: viewModel.foundAnswers,
-                        onTap: (tapX, tapY) => viewModel.checkAnswer(tapX, tapY),
+                      child: _buildImageContainer(
+                        context,
+                        viewModel,
+                        label: 'Original',
+                        imageUrl: viewModel.stage.imageAUrl ?? '',
+                        labelColor: Colors.black.withValues(alpha: 0.4),
                       ),
                     ),
-
-                    // 구분선
-                    Container(
-                      height: 2,
-                      color: Colors.grey.shade800,
-                    ),
-
-                    // 이미지 B
+                    const SizedBox(height: 12),
+                    // Find the Changes image
                     Expanded(
-                      child: ImageViewer(
-                        imageUrl: viewModel.stage.imageBUrl,
-                        answers: viewModel.stage.answers,
-                        foundAnswers: viewModel.foundAnswers,
-                        onTap: (tapX, tapY) => viewModel.checkAnswer(tapX, tapY),
+                      child: _buildImageContainer(
+                        context,
+                        viewModel,
+                        label: 'Find the Changes',
+                        imageUrl: viewModel.stage.imageBUrl ?? '',
+                        labelColor: const Color(0xFF7C3AED).withValues(alpha: 0.9),
                       ),
                     ),
                   ],
+                ),
+              ),
+            ),
+            const BannerAdWidget(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, StageViewModel viewModel) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF9F2).withValues(alpha: 0.8),
+        border: Border(
+          bottom: BorderSide(
+            color: const Color(0xFFFFF3E0),
+            width: 1,
+          ),
+        ),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              // Back button
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFE0E0E0)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+                  onPressed: () async {
+                    final shouldExit = await _showExitConfirmDialog(context);
+                    if (shouldExit == true && context.mounted) {
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(width: 16),
+              // Progress
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'PROGRESS',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 2,
+                            color: Color(0xFF999999),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${viewModel.foundCount}/${viewModel.totalCount}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF1A1A1A),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE0E0E0),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                      child: FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: viewModel.totalCount > 0
+                            ? viewModel.foundCount / viewModel.totalCount
+                            : 0.0,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD42426),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              // Zoom button
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFE0E0E0)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF7C3AED).withValues(alpha: 0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  icon: const Icon(Icons.zoom_in, size: 20, color: Color(0xFF7C3AED)),
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('줌 기능 구현 예정')),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Hint button
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF7C3AED),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF7C3AED).withValues(alpha: 0.4),
+                      blurRadius: 15,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  icon: const Icon(Icons.lightbulb, size: 20, color: Colors.white),
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('힌트 기능 구현 예정')),
+                    );
+                  },
                 ),
               ),
             ],
@@ -128,55 +276,59 @@ class _StagePageContentState extends State<_StagePageContent> {
     );
   }
 
-  Widget _buildTopBar(BuildContext context, StageViewModel viewModel) {
+  Widget _buildImageContainer(
+    BuildContext context,
+    StageViewModel viewModel, {
+    required String label,
+    required String imageUrl,
+    required Color labelColor,
+  }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      color: Colors.black.withValues(alpha: 0.5),
-      child: Row(
-        children: [
-          // 뒤로가기 버튼
-          IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () async {
-              final shouldExit = await _showExitConfirmDialog(context);
-              if (shouldExit == true && context.mounted) {
-                Navigator.of(context).pop();
-              }
-            },
-          ),
-
-          const Spacer(),
-
-          // 진행 상태
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF6200EE).withValues(alpha: 0.8),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              '${viewModel.foundCount}/${viewModel.totalCount}',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-          ),
-
-          const Spacer(),
-
-          // 힌트 버튼
-          IconButton(
-            icon: const Icon(Icons.lightbulb_outline, color: Colors.amber),
-            onPressed: () {
-              // 힌트 기능 (추후 구현)
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('힌트 기능 구현 예정')),
-              );
-            },
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: Stack(
+          children: [
+            // Image viewer
+            ImageViewer(
+              imageUrl: imageUrl,
+              answers: viewModel.stage.answers,
+              foundAnswers: viewModel.foundAnswers,
+              onTap: (tapX, tapY) => viewModel.checkAnswer(tapX, tapY),
+            ),
+            // Label
+            Positioned(
+              top: 12,
+              left: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: labelColor,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  label.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -185,7 +337,15 @@ class _StagePageContentState extends State<_StagePageContent> {
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('나가기'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text(
+          '나가기',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         content: const Text('정말 나가시겠습니까?\n진행 상황은 저장되지 않습니다.'),
         actions: [
           TextButton(
@@ -194,6 +354,9 @@ class _StagePageContentState extends State<_StagePageContent> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
             child: const Text('나가기'),
           ),
         ],
