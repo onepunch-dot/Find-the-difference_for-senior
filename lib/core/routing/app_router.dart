@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/loading/loading_page.dart';
 import '../../features/home/home_page.dart';
+import '../../features/stages/stage_list_page.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/loading',
@@ -16,8 +17,19 @@ final GoRouter appRouter = GoRouter(
       name: 'home',
       builder: (context, state) => const HomePage(),
     ),
+    GoRoute(
+      path: '/themes/:themeId/stages',
+      name: 'stageList',
+      builder: (context, state) {
+        final themeId = state.pathParameters['themeId']!;
+        final themeName = state.uri.queryParameters['themeName'] ?? '테마';
+        return StageListPage(
+          themeId: themeId,
+          themeName: themeName,
+        );
+      },
+    ),
     // 추후 추가될 라우트:
-    // - /themes/:themeId/stages (StageListPage)
     // - /stages/:stageId (StagePage)
     // - /result (ResultPage)
   ],

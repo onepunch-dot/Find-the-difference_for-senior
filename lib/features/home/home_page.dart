@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import 'home_viewmodel.dart';
 import 'widgets/theme_card.dart';
 import '../../domain/usecases/get_themes_usecase.dart';
@@ -98,7 +99,15 @@ class _HomePageContent extends StatelessWidget {
         final themeWithStatus = viewModel.themes[index];
         return ThemeCard(
           themeWithStatus: themeWithStatus,
-          onTap: () => viewModel.onThemeTap(themeWithStatus),
+          onTap: () {
+            final result = viewModel.onThemeTap(themeWithStatus);
+            if (result != null) {
+              // StageListPage로 이동
+              context.push(
+                '/themes/${result.theme.id}/stages?themeName=${Uri.encodeComponent(result.theme.name)}',
+              );
+            }
+          },
         );
       },
     );

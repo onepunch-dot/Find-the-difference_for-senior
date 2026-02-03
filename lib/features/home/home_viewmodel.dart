@@ -64,14 +64,16 @@ class HomeViewModel extends ChangeNotifier {
     }
   }
 
-  /// 테마 선택 (탭)
-  void onThemeTap(ThemeWithStatus themeWithStatus) {
+  /// 테마 선택 (탭) - 반환값은 네비게이션 정보
+  ThemeWithStatus? onThemeTap(ThemeWithStatus themeWithStatus) {
     if (themeWithStatus.isPlayable) {
-      // 플레이 가능: StageListPage로 이동 (추후 구현)
-      debugPrint('Navigate to StageList: ${themeWithStatus.theme.id}');
+      // 플레이 가능: StageListPage로 이동
+      return themeWithStatus;
     } else if (themeWithStatus.needsPurchase) {
-      // 구매 필요: 구매 모달 표시
+      // 구매 필요: 구매 모달 표시 (추후 구현)
       debugPrint('Show purchase modal: ${themeWithStatus.theme.id}');
+      return null;
     }
+    return null;
   }
 }
