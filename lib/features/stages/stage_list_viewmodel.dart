@@ -76,14 +76,16 @@ class StageListViewModel extends ChangeNotifier {
     }
   }
 
-  /// 스테이지 선택 (탭)
-  void onStageTap(StageWithStatus stageWithStatus) {
+  /// 스테이지 선택 (탭) - 반환값은 네비게이션 정보
+  StageWithStatus? onStageTap(StageWithStatus stageWithStatus) {
     if (stageWithStatus.isPlayable) {
-      // 플레이 가능: StagePage로 이동 (추후 구현)
-      debugPrint('Navigate to Stage: ${stageWithStatus.stage.id}');
+      // 플레이 가능: StagePage로 이동
+      return stageWithStatus;
     } else if (stageWithStatus.isLocked) {
-      // 잠김: 안내 메시지
+      // 잠김: 안내 메시지 (추후 구현)
       debugPrint('Stage is locked: ${stageWithStatus.stage.id}');
+      return null;
     }
+    return null;
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import 'stage_list_viewmodel.dart';
 import 'widgets/stage_card.dart';
 import '../../domain/usecases/get_stages_usecase.dart';
@@ -97,7 +98,13 @@ class _StageListPageContent extends StatelessWidget {
         final stageWithStatus = viewModel.stages[index];
         return StageCard(
           stageWithStatus: stageWithStatus,
-          onTap: () => viewModel.onStageTap(stageWithStatus),
+          onTap: () {
+            final result = viewModel.onStageTap(stageWithStatus);
+            if (result != null) {
+              // StagePage로 이동
+              context.push('/stage', extra: result.stage);
+            }
+          },
         );
       },
     );

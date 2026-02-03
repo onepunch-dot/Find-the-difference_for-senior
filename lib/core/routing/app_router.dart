@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import '../../features/loading/loading_page.dart';
 import '../../features/home/home_page.dart';
 import '../../features/stages/stage_list_page.dart';
+import '../../features/stage_play/stage_page.dart';
+import '../../domain/models/stage.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/loading',
@@ -29,8 +31,15 @@ final GoRouter appRouter = GoRouter(
         );
       },
     ),
+    GoRoute(
+      path: '/stage',
+      name: 'stage',
+      builder: (context, state) {
+        final stage = state.extra as Stage;
+        return StagePage(stage: stage);
+      },
+    ),
     // 추후 추가될 라우트:
-    // - /stages/:stageId (StagePage)
     // - /result (ResultPage)
   ],
   errorBuilder: (context, state) => Scaffold(
