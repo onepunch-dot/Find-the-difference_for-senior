@@ -1,7 +1,0 @@
-// Supabase configuration template
-// Copy this file to supabase_config.dart and fill in your credentials
-
-class SupabaseConfig {
-  static const String supabaseUrl = 'YOUR_SUPABASE_URL';
-  static const String supabasePublishableKey = 'YOUR_PUBLISHABLE_KEY';
-}
