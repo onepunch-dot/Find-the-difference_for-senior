@@ -1,0 +1,31 @@
+{
+  "@@locale": "en",
+  "appTitle": "Spot Difference",
+  "@appTitle": {
+    "description": "App title"
+  },
+  "loading": "Loading...",
+  "@loading": {
+    "description": "Loading message"
+  },
+  "error": "Error",
+  "@error": {
+    "description": "Error title"
+  },
+  "retry": "Retry",
+  "@retry": {
+    "description": "Retry button"
+  },
+  "close": "Close",
+  "@close": {
+    "description": "Close button"
+  },
+  "confirm": "Confirm",
+  "@confirm": {
+    "description": "Confirm button"
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Cancel button"
+  }
+}

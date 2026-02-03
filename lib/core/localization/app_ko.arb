@@ -1,0 +1,31 @@
+{
+  "@@locale": "ko",
+  "appTitle": "틀린그림찾기",
+  "@appTitle": {
+    "description": "앱 타이틀"
+  },
+  "loading": "로딩 중...",
+  "@loading": {
+    "description": "로딩 메시지"
+  },
+  "error": "오류",
+  "@error": {
+    "description": "오류 타이틀"
+  },
+  "retry": "다시 시도",
+  "@retry": {
+    "description": "재시도 버튼"
+  },
+  "close": "닫기",
+  "@close": {
+    "description": "닫기 버튼"
+  },
+  "confirm": "확인",
+  "@confirm": {
+    "description": "확인 버튼"
+  },
+  "cancel": "취소",
+  "@cancel": {
+    "description": "취소 버튼"
+  }
+}
