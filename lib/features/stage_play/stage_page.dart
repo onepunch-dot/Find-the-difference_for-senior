@@ -42,9 +42,13 @@ class _StagePageContent extends StatefulWidget {
 }
 
 class _StagePageContentState extends State<_StagePageContent> {
+  late final TransformationController _transformationController;
+
   @override
   void initState() {
     super.initState();
+    _transformationController = TransformationController();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final viewModel = context.read<StageViewModel>();
       viewModel.addListener(() {
@@ -53,6 +57,12 @@ class _StagePageContentState extends State<_StagePageContent> {
         }
       });
     });
+  }
+
+  @override
+  void dispose() {
+    _transformationController.dispose();
+    super.dispose();
   }
 
   void _navigateToResult() {
@@ -64,6 +74,22 @@ class _StagePageContentState extends State<_StagePageContent> {
         });
       }
     });
+  }
+
+  void _toggleZoom() {
+    final currentScale = _transformationController.value.getMaxScaleOnAxis();
+
+    if (currentScale > 1.5) {
+      // 확대되어 있으면 리셋
+      _transformationController.value = Matrix4.identity();
+    } else {
+      // 2배 확대
+      final matrix = Matrix4.identity();
+      matrix.setEntry(0, 0, 2.0); // scale x
+      matrix.setEntry(1, 1, 2.0); // scale y
+      matrix.setEntry(2, 2, 2.0); // scale z
+      _transformationController.value = matrix;
+    }
   }
 
   @override
@@ -236,11 +262,7 @@ class _StagePageContentState extends State<_StagePageContent> {
                 child: IconButton(
                   padding: EdgeInsets.zero,
                   icon: const Icon(Icons.zoom_in, size: 20, color: Color(0xFF7C3AED)),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('줌 기능 구현 예정')),
-                    );
-                  },
+                  onPressed: _toggleZoom,
                 ),
               ),
               const SizedBox(width: 8),
@@ -305,6 +327,7 @@ class _StagePageContentState extends State<_StagePageContent> {
               answers: viewModel.stage.answers,
               foundAnswers: viewModel.foundAnswers,
               onTap: (tapX, tapY) => viewModel.checkAnswer(tapX, tapY),
+              transformationController: _transformationController,
             ),
             // Label
             Positioned(
