@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/supabase_config.dart';
 
 /// Supabase 클라이언트 싱글톤
@@ -25,7 +26,15 @@ class SupabaseClientManager {
       try {
         if (_instance!.auth.currentUser == null) {
           await _instance!.auth.signInAnonymously();
-          debugPrint('Signed in anonymously: ${_instance!.auth.currentUser?.id}');
+          final userId = _instance!.auth.currentUser?.id;
+          debugPrint('Signed in anonymously: $userId');
+
+          // 사용자 ID를 영구 저장 (앱 재설치 시 복원용)
+          if (userId != null) {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString('anonymous_user_id', userId);
+            debugPrint('Saved anonymous user ID to local storage');
+          }
         }
       } catch (authError) {
         // 익명 로그인 비활성화된 경우 무시하고 계속 진행
@@ -52,7 +61,7 @@ class SupabaseClientManager {
   static bool get isInitialized => _initialized && _instance != null;
 
   /// 현재 사용자 ID (익명 사용자 포함)
-  /// 인증되지 않은 경우 로컬 디바이스 ID 사용
+  /// 인증되지 않은 경우 로컬에 저장된 ID 사용
   static String? get currentUserId {
     if (!isInitialized) return null;
 
@@ -60,9 +69,21 @@ class SupabaseClientManager {
     final userId = instance.auth.currentUser?.id;
     if (userId != null) return userId;
 
-    // 인증 없이 사용하는 경우 로컬 디바이스 ID 반환
-    // TODO: SharedPreferences에서 디바이스 ID 로드/저장
-    return 'local_user_001'; // 임시 로컬 사용자 ID
+    // 인증 없이 사용하는 경우 임시 ID
+    // 실제로는 getStoredUserId()를 async로 호출해야 하지만
+    // getter는 sync여야 하므로 임시값 반환
+    return 'local_user_temp';
+  }
+
+  /// 저장된 사용자 ID 가져오기 (async)
+  static Future<String?> getStoredUserId() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString('anonymous_user_id');
+    } catch (e) {
+      debugPrint('Failed to get stored user ID: $e');
+      return null;
+    }
   }
 
   /// 현재 사용자가 로그인되어 있는지 확인

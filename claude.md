@@ -230,3 +230,4 @@ lib/
 ## 12) supabase
 - supabase publishable Key: sb_publishable_G2VmHnnuVQ_Y7heLLL_qBQ_hLUxcw3k
 - supabase project url(anon key를 사용하지 않음): https://orjuplurmdbpkdsmameb.supabase.co
+- supabse service role key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yanVwbHVybWRicGtkc21hbWViIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDExMDUwOSwiZXhwIjoyMDg1Njg2NTA5fQ.BXhdgTnMhYNAzoUgU9gIbp6vQ7DbOHTXnuHvOWNsP3c

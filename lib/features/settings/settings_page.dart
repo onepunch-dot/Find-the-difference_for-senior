@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/supabase/supabase_client.dart';
+import '../audio/bgm_service.dart';
+import '../purchase/iap_service.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -74,9 +76,10 @@ class _SettingsPageState extends State<SettingsPage> {
                 title: 'BGM',
                 subtitle: '배경 음악 활성화',
                 value: _musicEnabled,
-                onChanged: (value) {
+                onChanged: (value) async {
                   setState(() => _musicEnabled = value);
-                  _saveSetting('music_enabled', value);
+                  await _saveSetting('music_enabled', value);
+                  await BGMService().setEnabled(value);
                 },
               ),
               _buildSwitchTile(
@@ -98,12 +101,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 icon: Icons.info_outline,
                 title: '앱 버전',
                 subtitle: '1.0.0',
-                onTap: null,
-              ),
-              _buildTile(
-                icon: Icons.person_outline,
-                title: '사용자 ID',
-                subtitle: SupabaseClientManager.currentUserId ?? '로그인 필요',
                 onTap: null,
               ),
             ],
@@ -144,21 +141,14 @@ class _SettingsPageState extends State<SettingsPage> {
             ],
           ),
           _buildSection(
-            title: '데이터',
+            title: '구매',
             children: [
               _buildTile(
-                icon: Icons.delete_outline,
-                title: '캐시 삭제',
-                subtitle: '다운로드한 이미지 및 음악 삭제',
-                onTap: _showClearCacheDialog,
-                textColor: Colors.orange,
-              ),
-              _buildTile(
-                icon: Icons.logout,
-                title: '로그아웃',
-                subtitle: '계정에서 로그아웃',
-                onTap: _showLogoutDialog,
-                textColor: Colors.red,
+                icon: Icons.restore,
+                title: '구매 복원',
+                subtitle: '이전 구매 내역 복원',
+                onTap: _showRestorePurchaseDialog,
+                textColor: Colors.blue,
               ),
             ],
           ),
@@ -290,16 +280,16 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Future<void> _showClearCacheDialog() async {
+  Future<void> _showRestorePurchaseDialog() async {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        title: const Text('캐시 삭제'),
+        title: const Text('구매 복원'),
         content: const Text(
-          '다운로드한 모든 이미지와 음악이 삭제됩니다.\n계속하시겠습니까?',
+          '이전에 구매한 항목을 복원합니다.\n스토어 계정의 구매 내역을 확인합니다.',
         ),
         actions: [
           TextButton(
@@ -309,53 +299,57 @@ class _SettingsPageState extends State<SettingsPage> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(
-              foregroundColor: Colors.orange,
+              foregroundColor: Colors.blue,
             ),
-            child: const Text('삭제'),
+            child: const Text('복원'),
           ),
         ],
       ),
     );
 
     if (result == true && mounted) {
-      // TODO: 실제 캐시 삭제 로직
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('캐시가 삭제되었습니다')),
+      // 로딩 표시
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
       );
-    }
-  }
 
-  Future<void> _showLogoutDialog() async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Text('로그아웃'),
-        content: const Text(
-          '로그아웃하시겠습니까?\n진행 상황은 저장됩니다.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.red,
+      // 진짜 IAP 구매 복원 (Apple/Google 스토어에서)
+      try {
+        final restoredProducts = await IAPService().restorePurchases();
+
+        if (mounted) {
+          Navigator.of(context).pop(); // 로딩 닫기
+
+          if (restoredProducts.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('복원할 구매 내역이 없습니다'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('${restoredProducts.length}개 항목을 복원했습니다'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          Navigator.of(context).pop(); // 로딩 닫기
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('복원 실패: $e'),
+              backgroundColor: Colors.red,
             ),
-            child: const Text('로그아웃'),
-          ),
-        ],
-      ),
-    );
-
-    if (result == true && mounted) {
-      await SupabaseClientManager.instance.auth.signOut();
-      if (mounted) {
-        context.go('/loading');
+          );
+        }
       }
     }
   }

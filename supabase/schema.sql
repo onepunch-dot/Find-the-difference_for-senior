@@ -36,9 +36,11 @@ CREATE TABLE IF NOT EXISTS stages (
 CREATE TABLE IF NOT EXISTS purchases (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL,
-  theme_id UUID NOT NULL REFERENCES themes(id) ON DELETE CASCADE,
+  type VARCHAR(20) NOT NULL CHECK (type IN ('theme', 'ad_removal')), -- 'theme' | 'ad_removal'
+  theme_id UUID REFERENCES themes(id) ON DELETE CASCADE, -- nullable: ad_removal일 경우 NULL
+  product_id VARCHAR(100) NOT NULL, -- IAP 제품 ID
   purchased_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(user_id, theme_id)
+  UNIQUE(user_id, type, theme_id) -- type별로 중복 방지
 );
 
 -- 완료 기록 테이블
@@ -54,6 +56,7 @@ CREATE TABLE IF NOT EXISTS completions (
 CREATE INDEX IF NOT EXISTS idx_stages_theme_id ON stages(theme_id);
 CREATE INDEX IF NOT EXISTS idx_stages_stage_number ON stages(theme_id, stage_number);
 CREATE INDEX IF NOT EXISTS idx_purchases_user_id ON purchases(user_id);
+CREATE INDEX IF NOT EXISTS idx_purchases_user_type ON purchases(user_id, type); -- type 조회 최적화
 CREATE INDEX IF NOT EXISTS idx_purchases_theme_id ON purchases(theme_id);
 CREATE INDEX IF NOT EXISTS idx_completions_user_id ON completions(user_id);
 CREATE INDEX IF NOT EXISTS idx_completions_stage_id ON completions(stage_id);

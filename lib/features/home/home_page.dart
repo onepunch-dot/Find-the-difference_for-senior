@@ -4,10 +4,15 @@ import 'package:go_router/go_router.dart';
 import 'home_viewmodel.dart';
 import '../../domain/usecases/get_themes_usecase.dart';
 import '../../data/supabase/repositories/theme_repository_impl.dart';
+import '../../data/supabase/repositories/stage_repository_impl.dart';
 import '../ads/widgets/banner_ad_widget.dart';
 import '../../presentation/widgets/loading_widget.dart';
 import '../../presentation/widgets/error_widget.dart';
 import '../../presentation/widgets/empty_widget.dart';
+import '../../presentation/dialogs/purchase_dialog.dart';
+import 'models/theme_status.dart';
+import '../audio/bgm_service.dart';
+import '../offline/offline_banner.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -16,10 +21,13 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) {
-        final repository = ThemeRepositoryImpl();
+        final themeRepository = ThemeRepositoryImpl();
+        final stageRepository = StageRepositoryImpl();
         return HomeViewModel(
-          getThemesUseCase: GetThemesUseCase(repository),
-          getPurchasedThemeIdsUseCase: GetPurchasedThemeIdsUseCase(repository),
+          getThemesUseCase: GetThemesUseCase(themeRepository),
+          getPurchasedThemeIdsUseCase:
+              GetPurchasedThemeIdsUseCase(themeRepository),
+          stageRepository: stageRepository,
         )..loadThemes();
       },
       child: const _HomePageContent(),
@@ -38,6 +46,7 @@ class _HomePageContent extends StatelessWidget {
       backgroundColor: const Color(0xFFF8F9FA),
       body: Column(
         children: [
+          const OfflineBanner(),
           Expanded(child: _buildBody(context, viewModel)),
           const BannerAdWidget(),
         ],
@@ -96,10 +105,18 @@ class _HomePageContent extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              _buildIconButton(Icons.music_note, () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('음악 설정 구현 예정')),
-                );
+              _buildIconButton(Icons.music_note, () async {
+                final bgmService = BGMService();
+                await bgmService.setEnabled(!bgmService.isEnabled);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        bgmService.isEnabled ? 'BGM 켜짐' : 'BGM 꺼짐',
+                      ),
+                    ),
+                  );
+                }
               }),
               const SizedBox(width: 12),
               _buildIconButton(Icons.vibration, () {
@@ -160,14 +177,7 @@ class _HomePageContent extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           GestureDetector(
-            onTap: () {
-              final result = viewModel.onThemeTap(highlightTheme);
-              if (result != null) {
-                context.push(
-                  '/themes/${result.theme.id}/stages?themeName=${Uri.encodeComponent(result.theme.name)}',
-                );
-              }
-            },
+            onTap: () => _handleThemeTap(context, viewModel, highlightTheme),
             child: Container(
               width: double.infinity,
               height: MediaQuery.of(context).size.height * 0.5,
@@ -187,13 +197,40 @@ class _HomePageContent extends StatelessWidget {
                 borderRadius: BorderRadius.circular(28),
                 child: Stack(
                   children: [
-                    // Background placeholder
-                    Container(
-                      color: Colors.grey[200],
-                      child: const Center(
-                        child: Icon(Icons.image, size: 64, color: Colors.grey),
-                      ),
-                    ),
+                    // Thumbnail image or placeholder
+                    highlightTheme.theme.thumbnailUrl != null &&
+                            highlightTheme.theme.thumbnailUrl!.isNotEmpty
+                        ? Image.network(
+                            highlightTheme.theme.thumbnailUrl!,
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Colors.grey[200],
+                                child: const Center(
+                                  child: Icon(Icons.image,
+                                      size: 64, color: Colors.grey),
+                                ),
+                              );
+                            },
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                color: Colors.grey[200],
+                                child: const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            },
+                          )
+                        : Container(
+                            color: Colors.grey[200],
+                            child: const Center(
+                              child: Icon(Icons.image,
+                                  size: 64, color: Colors.grey),
+                            ),
+                          ),
                     // Gradient overlay
                     Container(
                       decoration: BoxDecoration(
@@ -244,7 +281,7 @@ class _HomePageContent extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    '0/20',
+                                    '${highlightTheme.completedStages}/${highlightTheme.totalStages}',
                                     style: const TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w900,
@@ -268,7 +305,7 @@ class _HomePageContent extends StatelessWidget {
                             ),
                             child: FractionallySizedBox(
                               alignment: Alignment.centerLeft,
-                              widthFactor: 0.05,
+                              widthFactor: highlightTheme.progress,
                               child: Container(
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF3B82F6),
@@ -296,15 +333,8 @@ class _HomePageContent extends StatelessWidget {
                                 color: Colors.transparent,
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(24),
-                                  onTap: () {
-                                    final result =
-                                        viewModel.onThemeTap(highlightTheme);
-                                    if (result != null) {
-                                      context.push(
-                                        '/themes/${result.theme.id}/stages?themeName=${Uri.encodeComponent(result.theme.name)}',
-                                      );
-                                    }
-                                  },
+                                  onTap: () => _handleThemeTap(
+                                      context, viewModel, highlightTheme),
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 40,
@@ -375,14 +405,8 @@ class _HomePageContent extends StatelessWidget {
               return Padding(
                 padding: const EdgeInsets.only(right: 16),
                 child: GestureDetector(
-                  onTap: () {
-                    final result = viewModel.onThemeTap(themeWithStatus);
-                    if (result != null) {
-                      context.push(
-                        '/themes/${result.theme.id}/stages?themeName=${Uri.encodeComponent(result.theme.name)}',
-                      );
-                    }
-                  },
+                  onTap: () => _handleThemeTap(
+                      context, viewModel, themeWithStatus),
                   child: Container(
                     width: 175,
                     decoration: BoxDecoration(
@@ -406,13 +430,47 @@ class _HomePageContent extends StatelessWidget {
                             ),
                             child: Stack(
                               children: [
-                                Container(
-                                  color: Colors.grey[200],
-                                  child: const Center(
-                                    child: Icon(Icons.image,
-                                        size: 48, color: Colors.grey),
-                                  ),
-                                ),
+                                // Thumbnail image or placeholder
+                                themeWithStatus.theme.thumbnailUrl != null &&
+                                        themeWithStatus
+                                            .theme.thumbnailUrl!.isNotEmpty
+                                    ? Image.network(
+                                        themeWithStatus.theme.thumbnailUrl!,
+                                        width: double.infinity,
+                                        height: double.infinity,
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (context, error, stackTrace) {
+                                          return Container(
+                                            color: Colors.grey[200],
+                                            child: const Center(
+                                              child: Icon(Icons.image,
+                                                  size: 48, color: Colors.grey),
+                                            ),
+                                          );
+                                        },
+                                        loadingBuilder:
+                                            (context, child, loadingProgress) {
+                                          if (loadingProgress == null) {
+                                            return child;
+                                          }
+                                          return Container(
+                                            color: Colors.grey[200],
+                                            child: const Center(
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      )
+                                    : Container(
+                                        color: Colors.grey[200],
+                                        child: const Center(
+                                          child: Icon(Icons.image,
+                                              size: 48, color: Colors.grey),
+                                        ),
+                                      ),
                                 Container(
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
@@ -454,7 +512,7 @@ class _HomePageContent extends StatelessWidget {
                                         ),
                                         child: FractionallySizedBox(
                                           alignment: Alignment.centerLeft,
-                                          widthFactor: 0.15,
+                                          widthFactor: themeWithStatus.progress,
                                           child: Container(
                                             decoration: BoxDecoration(
                                               color: const Color(0xFF3B82F6),
@@ -515,5 +573,64 @@ class _HomePageContent extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  /// 테마 탭 핸들러 (구매 모달 표시 포함)
+  void _handleThemeTap(
+    BuildContext context,
+    HomeViewModel viewModel,
+    ThemeWithStatus themeWithStatus,
+  ) {
+    if (themeWithStatus.needsPurchase) {
+      // 구매 필요: 모달 표시
+      PurchaseDialog.show(
+        context,
+        theme: themeWithStatus.theme,
+        onPurchase: () async {
+          Navigator.of(context).pop(); // 모달 닫기
+
+          // 로딩 표시
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => const Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+
+          // 구매 처리
+          final success =
+              await viewModel.purchaseTheme(themeWithStatus.theme.id);
+
+          if (!context.mounted) return;
+          Navigator.of(context).pop(); // 로딩 닫기
+
+          // 결과 표시
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                success ? '구매가 완료되었습니다!' : '구매에 실패했습니다.',
+              ),
+              backgroundColor: success ? Colors.green : Colors.red,
+            ),
+          );
+        },
+        onRestore: () {
+          // TODO: 구매 복원 구현
+          Navigator.of(context).pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('구매 복원 기능은 준비 중입니다.')),
+          );
+        },
+      );
+    } else {
+      // 플레이 가능: StageListPage로 이동
+      final result = viewModel.onThemeTap(themeWithStatus);
+      if (result != null) {
+        context.push(
+          '/themes/${result.theme.id}/stages?themeName=${Uri.encodeComponent(result.theme.name)}',
+        );
+      }
+    }
   }
 }
